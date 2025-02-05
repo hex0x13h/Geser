@@ -1,4 +1,7 @@
 # Geser
+![license](https://img.shields.io/github/license/iaaaannn0/Geser)
+![language count](https://img.shields.io/github/languages/count/iaaaannn0/Geser)
+![repo size](https://img.shields.io/github/repo-size/iaaaannn0/Geser)
 
 Geser is a Gemini protocol server written in Rust. This project serves Markdown pages and static assets (such as images) from a designated folder, converting Markdown content into Gemini-compliant text. **This is my very first Rust project**, and it showcases Rust’s asynchronous I/O, TLS support with hot reloading, and a modular code structure.
 

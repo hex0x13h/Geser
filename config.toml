@@ -1,0 +1,5 @@
+address = "0.0.0.0:1965"
+cert_path = "cert.pem"
+key_path = "key.pem"
+pages_dir = "pages"
+tls_reload_interval_secs = 300

@@ -123,3 +123,61 @@ fn get_mime_type(path: &str) -> &'static str {
         "application/octet-stream"
     }
 }
+
+// Test module
+#[cfg(test)]
+mod tests {
+    use super::*;  // Import outer module contents
+    use crate::cache::Cache;
+    use std::env;
+    use tokio::fs;
+    
+    // Test serving Markdown files
+    #[tokio::test]
+    async fn test_serve_markdown() {
+        let cache = Cache::new();
+        let pages_dir = "test_pages"; // Assume this directory contains test Markdown files
+        let safe_path = "/";
+
+        // Create a simple test Markdown file
+        let file_path = format!("{}/index.md", pages_dir);
+        let content = "# Hello World\n\nWelcome to Gemini!";
+        fs::write(&file_path, content).await.unwrap();
+
+        // Test serving the Markdown file
+        let result = serve_markdown(pages_dir, safe_path, cache).await;
+        assert!(result.is_ok(), "The Markdown file should be served correctly");
+        let result_content = result.unwrap();
+        assert!(result_content.contains("Hello World"));
+        assert!(result_content.contains("Welcome to Gemini!"));
+    }
+
+    // Test serving static files (e.g., images)
+    #[tokio::test]
+    async fn test_serve_static_file() {
+        let cache = Cache::new();
+        let pages_dir = "test_pages"; // Assume this directory contains test static files
+        let safe_path = "/example.jpg";
+
+        // Create a simple test image file (binary data)
+        let file_path = format!("{}{}", pages_dir, safe_path);
+        let data = vec![255, 216, 255, 224]; // Some binary data for the test
+        fs::write(&file_path, &data).await.unwrap();
+
+        // Test serving the static file
+        let result = serve_static_file(pages_dir, safe_path, cache).await;
+        assert!(result.is_ok(), "The static file should be served correctly");
+        let (served_data, mime_type) = result.unwrap();
+        assert_eq!(mime_type, "image/jpeg");
+        assert_eq!(served_data, data);
+    }
+
+    // Test mime type detection
+    #[test]
+    fn test_get_mime_type() {
+        assert_eq!(get_mime_type("test.jpg"), "image/jpeg");
+        assert_eq!(get_mime_type("test.png"), "image/png");
+        assert_eq!(get_mime_type("test.gif"), "image/gif");
+        assert_eq!(get_mime_type("test.txt"), "application/octet-stream");
+    }
+}

@@ -4,6 +4,9 @@ use tokio::net::TcpListener;
 use tokio_rustls::TlsAcceptor;
 use anyhow::{Result, anyhow};
 use url::Url;
+use crate::pages::serve_static_file;
+use crate::pages::serve_markdown;
+
 
 use crate::tls::{get_tls_config, reload_tls_config_task};
 use crate::pages;
@@ -108,4 +111,83 @@ async fn handle_connection(
     }
     writer.flush().await?;
     Ok(())
+}
+
+// Test module
+#[cfg(test)]
+mod tests {
+    use super::*;  // Import outer module contents
+    use crate::cache::Cache;
+    use crate::config::Settings;
+    use tokio::net::TcpListener;
+    use std::net::SocketAddr;
+    use tokio::fs;
+
+    // Test handling of incoming connections
+    #[tokio::test]
+    async fn test_run_server() {
+        // Set up the test environment with mock settings
+        let settings = Settings {
+            address: "127.0.0.1:1965".to_string(),
+            cert_path: "test_cert.pem".to_string(),
+            key_path: "test_key.pem".to_string(),
+            pages_dir: "test_pages".to_string(),
+            tls_reload_interval_secs: 300,
+        };
+
+        // Start the server in a separate task
+        tokio::spawn(async move {
+            if let Err(e) = run_server(settings).await {
+                tracing::error!("Server failed to start: {:?}", e);
+            }
+        });
+
+        // Bind to the same address to test if the server is running
+        let listener = TcpListener::bind("127.0.0.1:1965").await.unwrap();
+        assert_eq!(listener.local_addr().unwrap().port(), 1965);
+
+        // Simulate a simple client connecting (you can expand this to a full client test)
+        let client = tokio::net::TcpStream::connect("127.0.0.1:1965").await.unwrap();
+        assert!(client.peer_addr().is_ok());
+    }
+
+    // Test request handling with static files
+    #[tokio::test]
+    async fn test_static_file_handling() {
+        let cache = Cache::new();
+        let pages_dir = "test_pages";
+        let safe_path = "/image.jpg";
+
+        // Create a simple test image file (binary data)
+        let file_path = format!("{}{}", pages_dir, safe_path);
+        let data = vec![255, 216, 255, 224]; // Some binary data for the test
+        fs::write(&file_path, &data).await.unwrap();
+
+        // Test serving the static file
+        let result = serve_static_file(pages_dir, safe_path, cache).await;
+        assert!(result.is_ok(), "The static file should be served correctly");
+        let (served_data, mime_type) = result.unwrap();
+        assert_eq!(mime_type, "image/jpeg");
+        assert_eq!(served_data, data);
+    }
+
+    // Test request handling with markdown files
+    #[tokio::test]
+    async fn test_markdown_handling() {
+        let cache = Cache::new();
+        let pages_dir = "test_pages";
+        let safe_path = "/index.md";
+
+        // Create a simple test Markdown file
+        let file_path = format!("{}/index.md", pages_dir);
+        let content = "# Hello World\n\nWelcome to Gemini!";
+        fs::write(&file_path, content).await.unwrap();
+
+        // Test serving the Markdown file
+        let result = serve_markdown(pages_dir, safe_path, cache).await;
+        assert!(result.is_ok(), "The Markdown file should be served correctly");
+        let result_content = result.unwrap();
+        assert!(result_content.contains("Hello World"));
+        assert!(result_content.contains("Welcome to Gemini!"));
+    }
 }

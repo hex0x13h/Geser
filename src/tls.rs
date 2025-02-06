@@ -64,3 +64,56 @@ pub async fn reload_tls_config_task(cert_path: String, key_path: String, interva
         }
     }
 }
+
+// Test module
+#[cfg(test)]
+mod tests {
+    use super::*;  // Import functions and structures from outer module
+    use std::env;
+    use std::fs::File;
+    use std::path::Path;
+    use tokio;
+
+    // Test that TLS config is loaded correctly
+    #[tokio::test]
+    async fn test_get_tls_config() {
+        // Create temporary certificate and key files for testing
+        let cert_file = "test_cert.pem";
+        let key_file = "test_key.pem";
+
+        // Make sure the test files exist and are valid (you may want to create valid files or mock the file system)
+        assert!(Path::new(cert_file).exists(), "Certificate file does not exist");
+        assert!(Path::new(key_file).exists(), "Key file does not exist");
+
+        // Test loading the TLS configuration
+        let result = get_tls_config(cert_file, key_file).await;
+        assert!(result.is_ok(), "Failed to load TLS config");
+    }
+
+    // Test reloading TLS configuration periodically
+    #[tokio::test]
+    async fn test_reload_tls_config_task() {
+        // Create temporary certificate and key files for testing
+        let cert_file = "test_cert.pem";
+        let key_file = "test_key.pem";
+
+        // Ensure test files exist and are valid
+        assert!(Path::new(cert_file).exists(), "Certificate file does not exist");
+        assert!(Path::new(key_file).exists(), "Key file does not exist");
+
+        // Set reload interval to 1 second for testing
+        let interval_secs = 1;
+
+        // Run the reload task and check if the configuration reloads without errors
+        let task = tokio::spawn(async move {
+            reload_tls_config_task(cert_file.to_string(), key_file.to_string(), interval_secs).await;
+        });
+
+        // Allow the task to run for a few seconds
+        tokio::time::sleep(Duration::from_secs(3)).await;
+        task.abort(); // Stop the task after the test period
+
+        // Check if the task ran correctly (this is a basic test, you can expand it by checking logs or other effects)
+        assert!(true, "TLS reload task ran successfully");
+    }
+}

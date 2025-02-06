@@ -1,0 +1,26 @@
+name: Rust CI with Pull Request
+
+on:
+  pull_request:
+    branches:
+      - main 
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Rust
+      uses: actions/setup-rust@v1
+      with:
+        rust-version: stable
+
+
+    - name: Install dependencies and run tests
+      run: |
+        cargo build --verbose
+        cargo test --verbose

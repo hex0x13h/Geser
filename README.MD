@@ -41,7 +41,7 @@ Geser is a Gemini protocol server written in Rust. This project serves Markdown 
 Clone the repository:
 
 ```bash
-git clone https://github.com/iaaaannn0/Geser.git
+git clone https://github.com/hex0x13h/Geser.git
 cd Geser
 # Generate a self-signed certificate for testing (make sure your OpenSSL version supports -addext):
 openssl req -x509 -nodes -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -subj "/CN=localhost" -addext "subjectAltName = IP:127.0.0.1"
